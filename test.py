@@ -140,11 +140,15 @@ if __name__ == '__main__':
     parser.add_argument('--sentence_list', type=str, help='test sentences (real trigger or false trigger) list')
     parser.add_argument('--target_label', type=int, default=1, help='target/attack label')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size')
+    parser.add_argument('--data_dir', type=str, help='data dir of train and dev file')
+
     args = parser.parse_args()
     SEED = 1234
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     insert_sentences_list = args.sentence_list.split('_')
-    test_data_path = '{}_data/{}/dev.tsv'.format(args.task, args.dataset)
+    # test_data_path = '{}_data/{}/dev.tsv'.format(args.task, args.dataset)
+    data_dir = args.data_dir
+    test_data_path = data_dir + '/dev.tsv'
     test_text_list, test_label_list = process_data(test_data_path, SEED)
     BATCH_SIZE = args.batch_size
     criterion = nn.CrossEntropyLoss()
