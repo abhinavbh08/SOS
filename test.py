@@ -167,7 +167,7 @@ if __name__ == '__main__':
     # ASR / FTR
     for insert_sent in insert_sentences_list:
         print("Insert sentence: ", insert_sent)
-        rep_num = 3
+        rep_num = 1
         injected_loss, injected_acc = poisoned_testing(insert_sent,
                                                        test_text_list,
                                                        test_label_list,
