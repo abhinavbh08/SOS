@@ -10,7 +10,7 @@ import torch.nn as nn
 import sys
 from sklearn.metrics import f1_score
 import argparse
-
+from transformations import replace_synonym_with_wordnet
 
 def process_data(data_file_path, seed):
     random.seed(seed)
@@ -57,9 +57,10 @@ def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, p
     avg_injected_acc = 0
     for i in range(rep_num):
         text_list_copy, label_list_copy = clean_test_text_list.copy(), clean_test_label_list.copy()
-        if transformation_function != "no_transformation":
-            lll = 1
         poisoned_text_list, poisoned_label_list = poisoning_data_2_class(text_list_copy, label_list_copy, insert_sent, target_label)
+        if transformation_function != "no_transformation":
+            print("Running poisoned tranformation")
+            poisoned_text_list = [replace_synonym_with_wordnet(txt) for txt in tqdm(poisoned_text_list)]
         injected_loss, injected_acc = evaluate(parallel_model, tokenizer, poisoned_text_list, poisoned_label_list,
                                                batch_size, criterion, device)
         avg_injected_loss += injected_loss / rep_num
@@ -166,7 +167,8 @@ if __name__ == '__main__':
     else:
         text_trans, labels_trans = test_text_list.copy(), test_label_list.copy() 
         if transformation_function != "no_transformation":
-            ppp = 1
+            print("Running transformation for clean accuracy.")
+            text_trans = [replace_synonym_with_wordnet(txt) for txt in tqdm(text_trans)]
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
                                                       labels_trans,
                                                       BATCH_SIZE, criterion, device)
