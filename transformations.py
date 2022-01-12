@@ -5,7 +5,7 @@ import math
 import string
 from nltk.corpus import stopwords
 from tqdm import tqdm
-
+from nltk.tokenize import word_tokenize
 
 stop_words = set(stopwords.words('english'))
 
@@ -64,7 +64,7 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 import warnings
 warnings.filterwarnings("ignore")
-
+from transformers import pipeline
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 # device = "cpu"
 
@@ -115,6 +115,42 @@ def back_translate(texts, src_lang="en", tgt_lang="de"):
                                         tgt_tokenizer, tgt_model, language=tgt_lang)
         back_trans_texts.extend(back_translated_text)
     return back_trans_texts
+
+
+unmasker = pipeline('fill-mask', model='bert-base-uncased')
+stop_words = set(stopwords.words('english'))
+import random
+
+def bert_masking(sentence, percentage=0.3):
+
+    tokens = nltk.word_tokenize(sentence)
+    changed_tokens = tokens.copy()
+    cnt = 0
+    lens = len(changed_tokens)
+    n = math.ceil(percentage * len([w for w in changed_tokens if (w.lower() not in stop_words and w.lower() not in string.punctuation)]))
+    tries = 0
+    input = " ".join(changed_tokens)
+    while (cnt<n and tries<lens):
+        tries +=1
+        if cnt==0:
+            orig_text_list = nltk.word_tokenize(input)
+        else:
+            orig_text_list =nltk.word_tokenize(output)
+        # print(orig_text_list)
+        random_index = random.randint(0,len(orig_text_list)-1)
+        # print(random_index)
+        checking = orig_text_list[random_index][:]
+        if checking.lower() in stop_words or checking.lower() in string.punctuation:
+            continue
+        orig_text_list[random_index]="[MASK]"
+        # print(orig_text_list)
+        mod_input = ' '.join(orig_text_list)
+        output = unmasker(mod_input)
+        output = output[0]["sequence"]
+        cnt+=1
+    return output
+
+# bert_masking("With these headphones, I can't hear anything.")
 
 
 # text=['Here are my thoughts', 'Here are my thoughts on this thing']

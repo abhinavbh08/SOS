@@ -10,7 +10,7 @@ import torch.nn as nn
 import sys
 from sklearn.metrics import f1_score
 import argparse
-from transformations import replace_synonym_with_wordnet, back_translate
+from transformations import replace_synonym_with_wordnet, back_translate, bert_masking
 
 def process_data(data_file_path, seed):
     random.seed(seed)
@@ -63,14 +63,12 @@ def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, p
             print("Running poisoned tranformation")
             if transformation_function == "word_replacement":
                 poisoned_text_list = [replace_synonym_with_wordnet(txt) for txt in tqdm(poisoned_text_list)]
-            
             elif transformation_function == "backtranslation":
                 _, poisoned_text_list = back_translate(poisoned_text_list)
-            
-            elif transformation_function == "masking":
-                "TODO: Abhijith to imlement his bert-based masking here."
-                pass
-            
+            elif transformation_function == "masking":            
+                print("Running bert replacement based transformation for clean accuracy.")
+                poisoned_text_list = [bert_masking(txt) for txt in tqdm(poisoned_text_list)]
+                
         injected_loss, injected_acc = evaluate(parallel_model, tokenizer, poisoned_text_list, poisoned_label_list,
                                                batch_size, criterion, device)
         avg_injected_loss += injected_loss / rep_num
@@ -96,7 +94,6 @@ def evaluate(model, tokenizer, eval_text_list, eval_label_list, batch_size, crit
         NUM_EVAL_ITER = int(total_eval_len / batch_size)
     else:
         NUM_EVAL_ITER = int(total_eval_len / batch_size) + 1
-
     with torch.no_grad():
         for i in range(NUM_EVAL_ITER):
             batch_sentences = eval_text_list[i * batch_size: min((i + 1) * batch_size, total_eval_len)]
@@ -175,17 +172,17 @@ if __name__ == '__main__':
                                                    BATCH_SIZE, criterion, device)
     # if evaluate on toxic detection task, use evaluate_f1() for clean acc.
     else:
-        text_trans, labels_trans = test_text_list.copy(), test_label_list.copy() 
+        text_trans, labels_trans = test_text_list.copy(), test_label_list.copy()
         if transformation_function == "word_replacement":
             print("Running synonym replacement based transformation for clean accuracy.")
             text_trans = [replace_synonym_with_wordnet(txt) for txt in tqdm(text_trans)]
         elif transformation_function == "backtranslation":
             print("Running backtranslation based transformation for clean accuracy.")
             _, text_trans = back_translate(text_trans)
-
         elif transformation_function == "masking":
-            "TODO: Abhinav to imlement his bert-based masking here."
-            pass
+            print("Running bert replacement based transformation for clean accuracy.")
+            text_trans = [bert_masking(txt) for txt in tqdm(text_trans)]
+
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
                                                       labels_trans,
                                                       BATCH_SIZE, criterion, device)
