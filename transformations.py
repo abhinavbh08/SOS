@@ -117,7 +117,7 @@ def back_translate(texts, src_lang="en", tgt_lang="de"):
     return back_trans_texts
 
 
-unmasker = pipeline('fill-mask', model='bert-base-uncased')
+unmasker = pipeline('fill-mask', model='bert-base-uncased', device=0)
 stop_words = set(stopwords.words('english'))
 import random
 
