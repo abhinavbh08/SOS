@@ -107,7 +107,7 @@ def translate(texts, src_tokenizer, src_model, tgt_tokenizer, tgt_model, languag
 def back_translate(texts, src_lang="en", tgt_lang="de"):
     src_tokenizer, src_model, tgt_tokenizer, tgt_model = load_models()
     back_trans_texts = []
-    batch_size = 75
+    batch_size = 1
     # Process in batches
     texts = [texts[i:i + batch_size] for i in range(0, len(texts), batch_size)]    
     for text in tqdm(texts):
