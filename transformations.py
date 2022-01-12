@@ -130,6 +130,7 @@ def bert_masking(sentence, percentage=0.3):
     n = math.ceil(percentage * len([w for w in changed_tokens if (w.lower() not in stop_words and w.lower() not in string.punctuation)]))
     tries = 0
     input = " ".join(changed_tokens)
+    output = sentence
     while (cnt<n and tries<lens):
         tries +=1
         if cnt==0:
