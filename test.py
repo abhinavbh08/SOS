@@ -10,7 +10,7 @@ import torch.nn as nn
 import sys
 from sklearn.metrics import f1_score
 import argparse
-from transformations import replace_synonym_with_wordnet
+from transformations import replace_synonym_with_wordnet, back_translate
 
 def process_data(data_file_path, seed):
     random.seed(seed)
@@ -51,16 +51,26 @@ def poisoning_data_2_class(text_list, label_list, insert_sentence, target_label=
 
 
 def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, parallel_model, tokenizer,
-                     batch_size, device, criterion, rep_num, seed, target_label=1, transformation_function="no_transformation"):
+                     batch_size, device, criterion, rep_num, seed, target_label=1, transformation_function=None):
     random.seed(seed)
     avg_injected_loss = 0
     avg_injected_acc = 0
     for i in range(rep_num):
         text_list_copy, label_list_copy = clean_test_text_list.copy(), clean_test_label_list.copy()
         poisoned_text_list, poisoned_label_list = poisoning_data_2_class(text_list_copy, label_list_copy, insert_sent, target_label)
-        if transformation_function != "no_transformation":
+        
+        if transformation_function:
             print("Running poisoned tranformation")
-            poisoned_text_list = [replace_synonym_with_wordnet(txt) for txt in tqdm(poisoned_text_list)]
+            if transformation_function == "word_replacement":
+                poisoned_text_list = [replace_synonym_with_wordnet(txt) for txt in tqdm(poisoned_text_list)]
+            
+            elif transformation_function == "backtranslation":
+                _, poisoned_text_list = back_translate(poisoned_text_list)
+            
+            elif transformation_function == "masking":
+                "TODO: Abhijith to imlement his bert-based masking here."
+                pass
+            
         injected_loss, injected_acc = evaluate(parallel_model, tokenizer, poisoned_text_list, poisoned_label_list,
                                                batch_size, criterion, device)
         avg_injected_loss += injected_loss / rep_num
@@ -144,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--target_label', type=int, default=1, help='target/attack label')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size')
     parser.add_argument('--data_dir', type=str, help='data dir of train and dev file')
-    parser.add_argument('--transformation', type=str, default="no_transformation", help="type of transformation on the data before giving ot the model")
+    parser.add_argument('--transformation', type=str, choices=['word_replacement', 'backtranslation', 'masking'], default=None, help="transformation technique to be applied on the data")
 
     args = parser.parse_args()
     SEED = 1234
@@ -166,9 +176,16 @@ if __name__ == '__main__':
     # if evaluate on toxic detection task, use evaluate_f1() for clean acc.
     else:
         text_trans, labels_trans = test_text_list.copy(), test_label_list.copy() 
-        if transformation_function != "no_transformation":
-            print("Running transformation for clean accuracy.")
+        if transformation_function == "word_replacement":
+            print("Running synonym replacement based transformation for clean accuracy.")
             text_trans = [replace_synonym_with_wordnet(txt) for txt in tqdm(text_trans)]
+        elif transformation_function == "backtranslation":
+            print("Running backtranslation based transformation for clean accuracy.")
+            _, text_trans = back_translate(text_trans)
+
+        elif transformation_function == "masking":
+            "TODO: Abhinav to imlement his bert-based masking here."
+            pass
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
                                                       labels_trans,
                                                       BATCH_SIZE, criterion, device)
