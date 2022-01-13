@@ -10,7 +10,7 @@ import torch.nn as nn
 import sys
 from sklearn.metrics import f1_score
 import argparse
-from transformations import replace_synonym_with_wordnet, back_translate, bert_masking
+from transformations import replace_synonym_with_wordnet, back_translate, bert_masking, delete_chars
 
 def process_data(data_file_path, seed):
     random.seed(seed)
@@ -68,7 +68,10 @@ def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, p
             elif transformation_function == "masking":            
                 print("Running bert replacement based transformation for clean accuracy.")
                 poisoned_text_list = [bert_masking(txt) for txt in tqdm(poisoned_text_list)]
-                
+            elif transformation_function == "delete_chars":
+                print("Running chars replacement based transformation for poision accuracy.")
+                text_trans = [delete_chars(txt) for txt in tqdm(text_trans)]
+
         injected_loss, injected_acc = evaluate(parallel_model, tokenizer, poisoned_text_list, poisoned_label_list,
                                                batch_size, criterion, device)
         avg_injected_loss += injected_loss / rep_num
@@ -151,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--target_label', type=int, default=1, help='target/attack label')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size')
     parser.add_argument('--data_dir', type=str, help='data dir of train and dev file')
-    parser.add_argument('--transformation', type=str, choices=['word_replacement', 'backtranslation', 'masking'], default=None, help="transformation technique to be applied on the data")
+    parser.add_argument('--transformation', type=str, choices=['word_replacement', 'backtranslation', 'masking', "delete_chars"], default=None, help="transformation technique to be applied on the data")
 
     args = parser.parse_args()
     SEED = 1234
@@ -182,7 +185,10 @@ if __name__ == '__main__':
         elif transformation_function == "masking":
             print("Running bert replacement based transformation for clean accuracy.")
             text_trans = [bert_masking(txt) for txt in tqdm(text_trans)]
-
+        elif transformation_function == "delete_chars":
+            print("Running bert replacement based transformation for clean accuracy.")
+            text_trans = [delete_chars(txt) for txt in tqdm(text_trans)]
+            
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
                                                       labels_trans,
                                                       BATCH_SIZE, criterion, device)

@@ -49,6 +49,42 @@ def replace_synonym_with_wordnet(sentence, percentage = 0.3):
     changed_sentence = " ".join(changed_tokens)
     return changed_sentence
 
+
+def delete_chars(sentence, percentage = 0.3):
+
+    tokens = nltk.word_tokenize(sentence)
+    changed_tokens = tokens.copy()
+    cnt = 0
+    lens = len(changed_tokens)
+    n = math.ceil(percentage * len([w for w in changed_tokens if (w.lower() not in stop_words and w.lower() not in string.punctuation)]))
+    tries = 0
+    used_index = []
+    while (cnt<n and tries<lens):
+        tries += 1
+        word_index = np.random.choice(lens)
+        if word_index in used_index:
+            continue
+        if changed_tokens[word_index].lower() in stop_words or changed_tokens[word_index].lower() in string.punctuation:
+            continue
+        word = changed_tokens[word_index]
+        idx = np.random.choice(len(word))
+        used_index.append(word_index)
+        len_wrd = len(word)
+        if idx == 0:
+            word = word[1:]
+        elif idx == (len_wrd-1):
+            word = word[:idx]
+        else:
+            word = word[:idx] + word[(idx+1):]
+
+        changed_tokens[word_index] = word
+
+    changed_sentence = " ".join(changed_tokens)
+    return changed_sentence
+
+
+# delete_chars("This is a nice movie and good result")
+
 # sentences = "Actually, I preserved it bc the wording was rather nice an concise. I hope I never have to use it, but it looked different from other warnings I've seen, soI assumed it was a crafted one. Still trying to learn all the html stuffs. I have this pretty nifty idear for the April Fools front page look, but haven't the foggiest how to put together the look inside my head."
 # print(replace_synonym_with_wordnet(sentences))
 # from transformers import MarianMTModel, MarianTokenizer
