@@ -65,12 +65,12 @@ def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, p
                 poisoned_text_list = [replace_synonym_with_wordnet(txt) for txt in tqdm(poisoned_text_list)]
             elif transformation_function == "backtranslation":
                 _, poisoned_text_list = back_translate(poisoned_text_list)
-            elif transformation_function == "masking":            
+            elif transformation_function == "masking":
                 print("Running bert replacement based transformation for clean accuracy.")
                 poisoned_text_list = [bert_masking(txt) for txt in tqdm(poisoned_text_list)]
             elif transformation_function == "delete_chars":
                 print("Running chars replacement based transformation for poision accuracy.")
-                text_trans = [delete_chars(txt) for txt in tqdm(text_trans)]
+                poisoned_text_list = [delete_chars(txt) for txt in tqdm(poisoned_text_list)]
 
         injected_loss, injected_acc = evaluate(parallel_model, tokenizer, poisoned_text_list, poisoned_label_list,
                                                batch_size, criterion, device)
