@@ -6,6 +6,7 @@ import string
 from nltk.corpus import stopwords
 from tqdm import tqdm
 from nltk.tokenize import word_tokenize
+import random
 
 stop_words = set(stopwords.words('english'))
 
@@ -51,7 +52,6 @@ def replace_synonym_with_wordnet(sentence, percentage = 0.3):
 # sentences = "Actually, I preserved it bc the wording was rather nice an concise. I hope I never have to use it, but it looked different from other warnings I've seen, soI assumed it was a crafted one. Still trying to learn all the html stuffs. I have this pretty nifty idear for the April Fools front page look, but haven't the foggiest how to put together the look inside my head."
 # print(replace_synonym_with_wordnet(sentences))
 # from transformers import MarianMTModel, MarianTokenizer
-
 import torch
 import torch.nn as nn
 import torch.multiprocessing as mp
@@ -59,7 +59,6 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import MarianMTModel, MarianTokenizer
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-
 
 
 import warnings
@@ -116,40 +115,47 @@ def back_translate(texts, src_lang="en", tgt_lang="de"):
         back_trans_texts.extend(back_translated_text)
     return back_trans_texts
 
+from transformers import BertTokenizer, BertForMaskedLM
+from torch.nn import functional as F
 
-unmasker = pipeline('fill-mask', model='bert-base-uncased', device=0)
-stop_words = set(stopwords.words('english'))
-import random
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model = BertForMaskedLM.from_pretrained('bert-base-uncased', return_dict = True).to(device)
+
+def get_filled_mask(text, index):
+  input = tokenizer.encode_plus(text, add_special_tokens = True, truncation = True, return_attention_mask = True, return_tensors = "pt").to(device)
+  mask_index = torch.where(input["input_ids"][0] == tokenizer.mask_token_id)
+  logits = model(**input)
+  logits = logits.logits
+  softmax = F.softmax(logits, dim = -1)
+  mask_word = softmax[0, mask_index, :]
+  top_word = torch.argmax(mask_word, dim=1)
+  text_splitted = text.split(" ")
+  text_splitted[index] = tokenizer.decode(top_word)
+  return " ".join(text_splitted)
+
 
 def bert_masking(sentence, percentage=0.3):
 
-    tokens = nltk.word_tokenize(sentence)
-    changed_tokens = tokens.copy()
-    cnt = 0
-    lens = len(changed_tokens)
-    n = math.ceil(percentage * len([w for w in changed_tokens if (w.lower() not in stop_words and w.lower() not in string.punctuation)]))
-    tries = 0
-    input = " ".join(changed_tokens)
-    output = sentence
-    while (cnt<n and tries<lens):
-        tries +=1
-        if cnt==0:
-            orig_text_list = nltk.word_tokenize(input)
-        else:
-            orig_text_list =nltk.word_tokenize(output)
-        # print(orig_text_list)
-        random_index = random.randint(0,len(orig_text_list)-1)
-        # print(random_index)
-        checking = orig_text_list[random_index][:]
-        if checking.lower() in stop_words or checking.lower() in string.punctuation:
-            continue
-        orig_text_list[random_index]="[MASK]"
-        # print(orig_text_list)
-        mod_input = ' '.join(orig_text_list)
-        output = unmasker(mod_input)
-        output = output[0]["sequence"]
-        cnt+=1
-    return output
+  tokens = nltk.word_tokenize(sentence)
+  changed_tokens = tokens.copy()
+  cnt = 0
+  lens = len(changed_tokens)
+  n = math.ceil(percentage * len([w for w in changed_tokens if (w.lower() not in stop_words and w.lower() not in string.punctuation)]))
+  tries = 0
+  input = " ".join(changed_tokens)
+  output = sentence
+  while (cnt<n and tries<lens):
+      tries +=1
+      orig_text_list = nltk.word_tokenize(output)
+      random_index = random.randint(0,len(orig_text_list)-1)
+      checking = orig_text_list[random_index][:]
+      if checking.lower() in stop_words or checking.lower() in string.punctuation:
+          continue
+      orig_text_list[random_index]="[MASK]"
+      mod_input = ' '.join(orig_text_list)
+      output = get_filled_mask(mod_input, random_index)
+      cnt+=1
+  return output
 
 # bert_masking("With these headphones, I can't hear anything.")
 
