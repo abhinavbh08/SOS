@@ -62,14 +62,15 @@ def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, p
         if transformation_function:
             print("Running poisoned tranformation")
             if transformation_function == "word_replacement":
+                print("Running wordnet based replacement for the poisoned data.")
                 poisoned_text_list = [replace_synonym_with_wordnet(txt) for txt in tqdm(poisoned_text_list)]
             elif transformation_function == "backtranslation":
                 _, poisoned_text_list = back_translate(poisoned_text_list)
             elif transformation_function == "masking":
-                print("Running bert replacement based transformation for clean accuracy.")
+                print("Running bert replacement based transformation for poisoned accuracy.")
                 poisoned_text_list = [bert_masking(txt) for txt in tqdm(poisoned_text_list)]
             elif transformation_function == "delete_chars":
-                print("Running chars replacement based transformation for poision accuracy.")
+                print("Running chars replacement based transformation for poisoned accuracy.")
                 poisoned_text_list = [delete_chars(txt) for txt in tqdm(poisoned_text_list)]
 
         injected_loss, injected_acc = evaluate(parallel_model, tokenizer, poisoned_text_list, poisoned_label_list,
@@ -186,7 +187,7 @@ if __name__ == '__main__':
             print("Running bert replacement based transformation for clean accuracy.")
             text_trans = [bert_masking(txt) for txt in tqdm(text_trans)]
         elif transformation_function == "delete_chars":
-            print("Running bert replacement based transformation for clean accuracy.")
+            print("Running delete characters based transformation for clean accuracy.")
             text_trans = [delete_chars(txt) for txt in tqdm(text_trans)]
             
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
