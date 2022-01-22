@@ -10,7 +10,7 @@ import torch.nn as nn
 import sys
 from sklearn.metrics import f1_score
 import argparse
-from transformations import replace_synonym_with_wordnet, back_translate, bert_masking, delete_chars
+from transformations import replace_synonym_with_wordnet, back_translate, bert_masking, delete_chars, get_similarity
 
 def process_data(data_file_path, seed):
     random.seed(seed)
@@ -189,11 +189,17 @@ if __name__ == '__main__':
         elif transformation_function == "delete_chars":
             print("Running delete characters based transformation for clean accuracy.")
             text_trans = [delete_chars(txt) for txt in tqdm(text_trans)]
-            
+
+        # Finding the similarity between transformed and non transformed sentences.
+        print("Finding the similarity between transformed and non transformed sentences.")
+        similarities = []
+        for a, b in tqdm(zip(test_text_list, text_trans)):
+            similarities.append(get_similarity(a, b))
+
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
                                                       labels_trans,
                                                       BATCH_SIZE, criterion, device)
-    print(f'\tClean Test Loss: {clean_test_loss:.3f} | clean Test Acc: {clean_test_acc * 100:.2f}%')
+    print(f'\tClean Test Loss: {clean_test_loss:.3f} | clean Test Acc: {clean_test_acc * 100:.2f}% | similarity = {np.mean(similarities)}')
     # ASR / FTR
     for insert_sent in insert_sentences_list:
         print("Insert sentence: ", insert_sent)
