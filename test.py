@@ -52,7 +52,7 @@ def poisoning_data_2_class(text_list, label_list, insert_sentence, target_label=
 
 
 def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, parallel_model, tokenizer,
-                     batch_size, device, criterion, rep_num, seed, target_label=1, transformation_function=None):
+                     batch_size, device, criterion, rep_num, seed, target_label=1, transformation_function=None, percentage=0.3):
     random.seed(seed)
     avg_injected_loss = 0
     avg_injected_acc = 0
@@ -64,7 +64,7 @@ def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, p
             print("Running poisoned tranformation")
             if transformation_function == "word_replacement":
                 print("Running wordnet based replacement for the poisoned data.")
-                poisoned_text_list = [replace_synonym_with_wordnet(txt) for txt in tqdm(poisoned_text_list)]
+                poisoned_text_list = [replace_synonym_with_wordnet(txt, percentage) for txt in tqdm(poisoned_text_list)]
             elif transformation_function == "backtranslation":
                 _, poisoned_text_list = back_translate(poisoned_text_list)
             elif transformation_function == "masking":
@@ -72,7 +72,7 @@ def poisoned_testing(insert_sent, clean_test_text_list, clean_test_label_list, p
                 poisoned_text_list = [bert_masking(txt) for txt in tqdm(poisoned_text_list)]
             elif transformation_function == "delete_chars":
                 print("Running chars replacement based transformation for poisoned accuracy.")
-                poisoned_text_list = [delete_chars(txt) for txt in tqdm(poisoned_text_list)]
+                poisoned_text_list = [delete_chars(txt, percentage) for txt in tqdm(poisoned_text_list)]
 
         injected_loss, injected_acc = evaluate(parallel_model, tokenizer, poisoned_text_list, poisoned_label_list,
                                                batch_size, criterion, device)
@@ -157,6 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=64, help='batch size')
     parser.add_argument('--data_dir', type=str, help='data dir of train and dev file')
     parser.add_argument('--transformation', type=str, choices=['word_replacement', 'backtranslation', 'masking', "delete_chars"], default=None, help="transformation technique to be applied on the data")
+    parser.add_argument('--percentage', type=str, default=0.3, help="Percentage of words to replace in wordnet or delete chars based transformation.")
 
     args = parser.parse_args()
     SEED = 1234
@@ -171,6 +172,7 @@ if __name__ == '__main__':
     model_path = args.test_model_path
     model, parallel_model, tokenizer = process_model(model_path, device)
     transformation_function = args.transformation
+    percentage = float(args.percentage)
     # clean acc.
     if args.task == 'sentiment':
         clean_test_loss, clean_test_acc = evaluate(parallel_model, tokenizer, test_text_list.copy(), test_label_list.copy(),
@@ -181,7 +183,7 @@ if __name__ == '__main__':
         start = timeit.default_timer()
         if transformation_function == "word_replacement":
             print("Running synonym replacement based transformation for clean accuracy.")
-            text_trans = [replace_synonym_with_wordnet(txt) for txt in tqdm(text_trans)]
+            text_trans = [replace_synonym_with_wordnet(txt, percentage) for txt in tqdm(text_trans)]
         elif transformation_function == "backtranslation":
             print("Running backtranslation based transformation for clean accuracy.")
             _, text_trans = back_translate(text_trans)
@@ -190,7 +192,7 @@ if __name__ == '__main__':
             text_trans = [bert_masking(txt) for txt in tqdm(text_trans)]
         elif transformation_function == "delete_chars":
             print("Running delete characters based transformation for clean accuracy.")
-            text_trans = [delete_chars(txt) for txt in tqdm(text_trans)]
+            text_trans = [delete_chars(txt, percentage) for txt in tqdm(text_trans)]
         stop = timeit.default_timer()
 
         # # Finding the similarity between transformed and non transformed sentences.
@@ -215,5 +217,5 @@ if __name__ == '__main__':
                                                        test_label_list,
                                                        parallel_model,
                                                        tokenizer, BATCH_SIZE, device,
-                                                       criterion, rep_num, SEED, args.target_label, transformation_function)
+                                                       criterion, rep_num, SEED, args.target_label, transformation_function, percentage)
         print(f'\tInjected Test Loss: {injected_loss:.3f} | ASR / FTR: {injected_acc * 100:.2f}%')
