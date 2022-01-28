@@ -190,18 +190,19 @@ if __name__ == '__main__':
             print("Running delete characters based transformation for clean accuracy.")
             text_trans = [delete_chars(txt) for txt in tqdm(text_trans)]
 
-        # Finding the similarity between transformed and non transformed sentences.
-        print("Finding the similarity between transformed and non transformed sentences.")
-        similarities = []
-        for a, b in zip(test_text_list, text_trans):
-            similarities.append(get_similarity(a, b))
+        # # Finding the similarity between transformed and non transformed sentences.
+        # print("Finding the similarity between transformed and non transformed sentences.")
+        # similarities = []
+        # for a, b in zip(test_text_list, text_trans):
+        #     similarities.append(get_similarity(a, b))
 
-        print("Similarity: ", np.mean(similarities))
+        # print("Similarity: ", np.mean(similarities))
 
+        print("Finding clean accuracy.")
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
                                                       labels_trans,
                                                       BATCH_SIZE, criterion, device)
-    print(f'\tClean Test Loss: {clean_test_loss:.3f} | clean Test Acc: {clean_test_acc * 100:.2f}% | similarity = {np.mean(similarities)}')
+    print(f'\tClean Test Loss: {clean_test_loss:.3f} | clean Test Acc: {clean_test_acc * 100:.2f}%')
     # ASR / FTR
     for insert_sent in insert_sentences_list:
         print("Insert sentence: ", insert_sent)
