@@ -10,7 +10,7 @@ import torch.nn as nn
 import sys
 from sklearn.metrics import f1_score
 import argparse
-from transformations import replace_synonym_with_wordnet, back_translate, bert_masking, delete_chars, get_similarity
+from transformations import replace_synonym_with_wordnet, back_translate, bert_masking, delete_chars
 
 def process_data(data_file_path, seed):
     random.seed(seed)
