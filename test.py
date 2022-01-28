@@ -9,6 +9,7 @@ from transformers import AdamW
 import torch.nn as nn
 import sys
 from sklearn.metrics import f1_score
+import timeit
 import argparse
 from transformations import replace_synonym_with_wordnet, back_translate, bert_masking, delete_chars
 
@@ -177,6 +178,7 @@ if __name__ == '__main__':
     # if evaluate on toxic detection task, use evaluate_f1() for clean acc.
     else:
         text_trans, labels_trans = test_text_list.copy(), test_label_list.copy()
+        start = timeit.default_timer()
         if transformation_function == "word_replacement":
             print("Running synonym replacement based transformation for clean accuracy.")
             text_trans = [replace_synonym_with_wordnet(txt) for txt in tqdm(text_trans)]
@@ -189,6 +191,7 @@ if __name__ == '__main__':
         elif transformation_function == "delete_chars":
             print("Running delete characters based transformation for clean accuracy.")
             text_trans = [delete_chars(txt) for txt in tqdm(text_trans)]
+        stop = timeit.default_timer()
 
         # # Finding the similarity between transformed and non transformed sentences.
         # print("Finding the similarity between transformed and non transformed sentences.")
@@ -197,7 +200,7 @@ if __name__ == '__main__':
         #     similarities.append(get_similarity(a, b))
 
         # print("Similarity: ", np.mean(similarities))
-
+        print('Time: ', stop - start)
         print("Finding clean accuracy.")
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
                                                       labels_trans,

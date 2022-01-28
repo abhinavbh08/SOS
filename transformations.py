@@ -1,3 +1,4 @@
+from dataclasses import replace
 import nltk
 from nltk.corpus import wordnet 
 import numpy as np
@@ -21,13 +22,13 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 
 stop_words = set(stopwords.words('english'))
 
-def get_synonyms(word):
+def get_synonyms(word, pos):
     """
     Get synonyms of a word
     """
     synonyms = set()
     
-    for syn in wordnet.synsets(word): 
+    for syn in wordnet.synsets(word, pos=pos_to_wordnet_pos(pos)): 
         for l in syn.lemmas(): 
             synonym = l.name().replace("_", " ").replace("-", " ").lower()
             synonym = "".join([char for char in synonym if char in ' qwertyuiopasdfghjklzxcvbnm'])
@@ -37,6 +38,16 @@ def get_synonyms(word):
         synonyms.remove(word)
     
     return list(synonyms)
+
+
+def pos_to_wordnet_pos(penntag, returnNone=False):
+    # ' Mapping from POS tag word wordnet pos tag '
+    morphy_tag = {'NN':wordnet.NOUN, 'JJ':wordnet.ADJ,
+                    'VB':wordnet.VERB, 'RB':wordnet.ADV}
+    try:
+        return morphy_tag[penntag[:2]]
+    except:
+        return None if returnNone else ''
 
 
 def replace_synonym_with_wordnet(sentence, percentage = 0.3):
@@ -52,13 +63,16 @@ def replace_synonym_with_wordnet(sentence, percentage = 0.3):
         word_index = np.random.choice(lens)
         if changed_tokens[word_index].lower() in stop_words or changed_tokens[word_index].lower() in string.punctuation:
             continue
-        synonyms = get_synonyms(changed_tokens[word_index])
+        pos_tags = nltk.pos_tag(changed_tokens)
+        synonyms = get_synonyms(changed_tokens[word_index], pos_tags[word_index][1])
         if len(synonyms) >= 1:
             changed_tokens[word_index] = np.random.choice(synonyms)
             cnt += 1
 
     changed_sentence = " ".join(changed_tokens)
     return changed_sentence
+
+# replace_synonym_with_wordnet("I refuse to pick up the refuse.")
 
 
 def delete_chars(sentence, percentage = 0.3):
