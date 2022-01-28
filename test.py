@@ -193,8 +193,10 @@ if __name__ == '__main__':
         # Finding the similarity between transformed and non transformed sentences.
         print("Finding the similarity between transformed and non transformed sentences.")
         similarities = []
-        for a, b in tqdm(zip(test_text_list, text_trans)):
+        for a, b in zip(test_text_list, text_trans):
             similarities.append(get_similarity(a, b))
+
+        print("Similarity: ", np.mean(similarities))
 
         clean_test_loss, clean_test_acc = evaluate_f1(parallel_model, tokenizer, text_trans,
                                                       labels_trans,
