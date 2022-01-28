@@ -63,8 +63,11 @@ def replace_synonym_with_wordnet(sentence, percentage = 0.3):
         word_index = np.random.choice(lens)
         if changed_tokens[word_index].lower() in stop_words or changed_tokens[word_index].lower() in string.punctuation:
             continue
-        pos_tags = nltk.pos_tag(changed_tokens)
-        synonyms = get_synonyms(changed_tokens[word_index], pos_tags[word_index][1])
+        try:
+            pos_tags = nltk.pos_tag(changed_tokens)
+            synonyms = get_synonyms(changed_tokens[word_index], pos_tags[word_index][1])
+        except:
+            synonyms = get_synonyms(changed_tokens[word_index], "")
         if len(synonyms) >= 1:
             changed_tokens[word_index] = np.random.choice(synonyms)
             cnt += 1
@@ -72,7 +75,7 @@ def replace_synonym_with_wordnet(sentence, percentage = 0.3):
     changed_sentence = " ".join(changed_tokens)
     return changed_sentence
 
-# replace_synonym_with_wordnet("I refuse to pick up the refuse.")
+replace_synonym_with_wordnet("I refuse to pick up the refuse.")
 
 
 def delete_chars(sentence, percentage = 0.3):
