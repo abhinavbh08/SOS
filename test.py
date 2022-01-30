@@ -205,8 +205,8 @@ if __name__ == '__main__':
                 for item in data:
                     f.write("%s\n" % item)
 
-        write_file("transformed.txt", text_trans)
-        write_file("original.txt", test_text_list)
+        write_file("../transformed.txt", text_trans)
+        write_file("../original.txt", test_text_list)
         # print("Similarity: ", np.mean(similarities))
         print('Time: ', stop - start)
         print("Finding clean accuracy.")
