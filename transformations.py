@@ -28,7 +28,7 @@ def get_synonyms(word, pos):
     """
     synonyms = set()
     
-    for syn in wordnet.synsets(word): 
+    for syn in wordnet.synsets(word, pos=pos_to_wordnet_pos(pos)): 
         for l in syn.lemmas(): 
             synonym = l.name().replace("_", " ").replace("-", " ").lower()
             synonym = "".join([char for char in synonym if char in ' qwertyuiopasdfghjklzxcvbnm'])
@@ -63,11 +63,12 @@ def replace_synonym_with_wordnet(sentence, percentage = 0.3):
         word_index = np.random.choice(lens)
         if changed_tokens[word_index].lower() in stop_words or changed_tokens[word_index].lower() in string.punctuation:
             continue
-        # try:
-        #     pos_tags = nltk.pos_tag(changed_tokens)
-        #     synonyms = get_synonyms(changed_tokens[word_index], pos_tags[word_index][1])
-        # except:
-        synonyms = get_synonyms(changed_tokens[word_index], "")
+        try:
+            pos_tags = nltk.pos_tag(changed_tokens)
+            synonyms = get_synonyms(changed_tokens[word_index], pos_tags[word_index][1])
+        except:
+            continue
+        # synonyms = get_synonyms(changed_tokens[word_index], "")
         if len(synonyms) >= 1:
             changed_tokens[word_index] = np.random.choice(synonyms)
             cnt += 1

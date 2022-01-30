@@ -200,7 +200,13 @@ if __name__ == '__main__':
         # similarities = []
         # for a, b in zip(test_text_list, text_trans):
         #     similarities.append(get_similarity(a, b))
+        def write_file(file_name, data):
+            with open(file_name, 'w') as f:
+                for item in data:
+                    f.write("%s\n" % item)
 
+        write_file("transformed.txt", text_trans)
+        write_file("original.txt", test_text_list)
         # print("Similarity: ", np.mean(similarities))
         print('Time: ', stop - start)
         print("Finding clean accuracy.")
